@@ -5,36 +5,32 @@
       <StreakBadge :days="stats?.streak?.current_streak_days || 0" />
     </div>
 
-    <section class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-icon">📚</div>
-        <div class="v">{{ stats?.total?.words_learned || 0 }}</div>
-        <div class="l">已学单词</div>
+    <el-card :body-style="{ padding: 0 }" class="stat-grid">
+      <div class="stat-cell">
+        <span class="stat-icon">📚</span>
+        <el-statistic title="累计已学" :value="stats?.total?.words_learned || 0" />
       </div>
-      <div class="stat-card mastered">
-        <div class="stat-icon">🏆</div>
-        <div class="v">{{ stats?.total?.words_mastered || 0 }}</div>
-        <div class="l">已掌握</div>
+      <div class="stat-cell mastered">
+        <span class="stat-icon">🏆</span>
+        <el-statistic title="累计掌握" :value="stats?.total?.words_mastered || 0" />
       </div>
-      <div class="stat-card">
-        <div class="stat-icon">🔁</div>
-        <div class="v">{{ stats?.today?.reviewed || 0 }}</div>
-        <div class="l">今日复习</div>
+      <div class="stat-cell">
+        <span class="stat-icon">🔁</span>
+        <el-statistic title="今日复习" :value="stats?.today?.reviewed || 0" />
       </div>
-      <div class="stat-card accurate">
-        <div class="stat-icon">🎯</div>
-        <div class="v">{{ formatPercent(stats?.today?.accuracy_rate) }}</div>
-        <div class="l">今日准确率</div>
+      <div class="stat-cell accurate">
+        <span class="stat-icon">🎯</span>
+        <el-statistic title="今日准确率" :value="formatPercent(stats?.today?.accuracy_rate)" />
       </div>
-    </section>
+    </el-card>
 
-    <section class="heatmap-card card">
+    <el-card class="heatmap-card" body-class="heatmap-body">
       <div class="heatmap-head">
-        <span class="heatmap-title">近 365 天学习热力图</span>
-        <span class="heatmap-sub">连续打卡 {{ stats?.streak?.max_streak_days || 0 }} 天</span>
+        <span class="heatmap-title">🔥 近 365 天学习热力图</span>
+        <span class="heatmap-sub">最长连续打卡 {{ stats?.streak?.max_streak_days || 0 }} 天</span>
       </div>
       <Heatmap :dates="heatmap.dates" :counts="heatmap.counts" />
-    </section>
+    </el-card>
   </div>
 </template>
 
@@ -62,48 +58,71 @@ onMounted(async () => {
   margin-bottom: 20px;
 }
 .stat-grid {
+  border-radius: 16px;
+  border: 1px solid #eef1f6;
+  margin-bottom: 22px;
+}
+.stat-grid :deep(.el-card__body) {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 20px;
 }
-.stat-card {
-  background: #fff;
-  border: 1px solid #eef1f6;
-  border-radius: 14px;
-  padding: 20px;
+.stat-cell {
+  padding: 22px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(30, 41, 59, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.stat-cell + .stat-cell {
+  border-left: 1px solid #eef1f6;
 }
 .stat-icon {
   font-size: 26px;
+  margin-bottom: 6px;
 }
-.stat-card .v {
+.stat-cell :deep(.el-statistic__head) {
+  color: #8a93a6;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+.stat-cell :deep(.el-statistic__content) {
   font-size: 28px;
   font-weight: 800;
   color: #4f46e5;
-  margin: 6px 0 2px;
 }
-.stat-card.mastered .v { color: #22c55e; }
-.stat-card.accurate .v { color: #f59e0b; }
-.stat-card .l {
-  color: #8a93a6;
-  font-size: 13px;
-}
+.stat-cell.mastered :deep(.el-statistic__content) { color: #22c55e; }
+.stat-cell.accurate :deep(.el-statistic__content) { color: #f59e0b; }
 .heatmap-card {
-  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #eef1f6;
+}
+.heatmap-card :deep(.el-card__body.heatmap-body) {
+  padding: 24px;
 }
 .heatmap-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .heatmap-title {
   font-weight: 700;
+  font-size: 16px;
 }
 .heatmap-sub {
   color: #9aa3b2;
   font-size: 13px;
+}
+@media (max-width: 720px) {
+  .stat-grid :deep(.el-card__body) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stat-cell:nth-child(2n) {
+    border-left: 1px solid #eef1f6;
+  }
+  .stat-cell + .stat-cell {
+    border-left: none;
+  }
 }
 </style>

@@ -29,6 +29,10 @@ defineEmits(['flip'])
   width: 420px;
   height: 260px;
   cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.word-card:hover {
+  transform: translateY(-4px);
 }
 @media (max-width: 520px) {
   .word-card { width: 320px; height: 220px; }
@@ -54,11 +58,19 @@ defineEmits(['flip'])
   border-radius: 20px;
   padding: 24px;
   border: 1px solid #eef1f6;
-  box-shadow: 0 12px 32px rgba(30, 41, 59, 0.1);
+  box-shadow: 0 14px 36px rgba(79, 70, 229, 0.14);
 }
 .front {
   background: linear-gradient(140deg, #6366f1 0%, #4f46e5 55%, #3730a3 100%);
   color: #fff;
+}
+.front::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.18), transparent 45%);
+  pointer-events: none;
 }
 .word {
   font-size: 46px;

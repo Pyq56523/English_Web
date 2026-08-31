@@ -1,5 +1,11 @@
 <template>
   <el-header class="header">
+    <div class="left">
+      <div class="day-chip">
+        <span class="lbl">今日</span>
+        <span class="val">{{ today }}</span>
+      </div>
+    </div>
     <div class="spacer" />
     <el-dropdown @command="onCommand">
       <span class="user">
@@ -20,9 +26,13 @@
 import { ArrowDown } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import dayjs from 'dayjs'
 
 const router = useRouter()
 const userStore = useUserStore()
+
+const week = ['日', '一', '二', '三', '四', '五', '六']
+const today = dayjs().format(`M月D日 · 周${week[dayjs().day()]}`)
 
 function onCommand(cmd) {
   if (cmd === 'logout') {
@@ -36,19 +46,47 @@ function onCommand(cmd) {
 .header {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  background: #fff;
-  border-bottom: 1px solid #eef1f6;
+  justify-content: space-between;
+  background: var(--app-header-bg, rgba(255, 255, 255, 0.82));
+  backdrop-filter: saturate(180%) blur(10px);
+  border-bottom: 1px solid var(--app-border, #eef1f6);
   height: 64px;
+  padding: 0 28px;
+  flex-shrink: 0;
+}
+.left {
+  display: flex;
+  align-items: center;
+}
+.day-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: var(--app-fill-soft, #f4f5ff);
+  border: 1px solid var(--app-fill-soft-border, #e6e5ff);
+}
+.day-chip .lbl {
+  font-size: 12px;
+  color: var(--app-text-muted, #9aa3b2);
+}
+.day-chip .val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-primary, #4f46e5);
 }
 .user {
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-radius: 999px;
   transition: background 0.2s;
+}
+@media (max-width: 640px) {
+  .day-chip { display: none; }
 }
 .user:hover {
   background: #f4f5ff;
@@ -68,7 +106,7 @@ function onCommand(cmd) {
 .name {
   font-size: 14px;
   font-weight: 500;
-  color: #1f2430;
+  color: var(--app-text, #1f2430);
 }
 .arrow {
   color: #9aa3b2;

@@ -37,15 +37,20 @@ const cells = computed(() =>
 .heatmap {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
-  padding: 12px;
-  background: #fff;
-  border-radius: 8px;
+  gap: 4px;
+  padding: 14px;
+  background: #fafbff;
+  border-radius: 12px;
+  border: 1px solid #f0f1fa;
 }
 .day {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  transition: transform 0.15s ease;
+}
+.day:hover {
+  transform: scale(1.3);
 }
 .legend {
   display: flex;

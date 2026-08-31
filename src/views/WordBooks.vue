@@ -12,12 +12,18 @@
       <div v-for="b in wordBook.books" :key="b.id" class="book" tabindex="0"
         :class="{ picked: pickedId === b.id }" @click="select(b)"
         @keydown.enter="select(b)">
-        <el-tag size="small" effect="plain" class="cat">{{ b.category }}</el-tag>
+        <div class="book-top">
+          <el-tag size="small" effect="light" class="cat">{{ b.category }}</el-tag>
+          <el-icon v-if="pickedId === b.id" class="check"><CircleCheckFilled /></el-icon>
+        </div>
         <div class="name">{{ b.name }}</div>
         <div class="desc">{{ b.description || '精选高频单词，助你高效学习' }}</div>
         <div class="foot">
-          <span class="count">{{ b.word_count }} 词</span>
-          <span v-if="pickedId === b.id" class="picked-tag">当前使用</span>
+          <span class="count"><el-icon><Notebook /></el-icon> {{ b.word_count }} 词</span>
+          <el-button v-if="pickedId === b.id" type="primary" size="small" round plain>
+            当前使用
+          </el-button>
+          <span v-else class="hover-cta">选择 →</span>
         </div>
       </div>
     </div>
@@ -25,7 +31,7 @@
 
     <div class="actions">
       <el-button v-if="wordBook.current" type="primary" size="large" round @click="goLearning">
-        继续学习「{{ wordBook.current.name }}」
+        🚀 继续学习「{{ wordBook.current.name }}」
       </el-button>
     </div>
   </div>
@@ -36,6 +42,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWordBookStore } from '@/stores/wordBook'
 import { startLearning } from '@/api/learning'
+import { Notebook, CircleCheckFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const wordBook = useWordBookStore()
@@ -78,34 +85,45 @@ loadBooks()
 }
 .books {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 16px;
+}
+.books {
+  gap: 18px;
 }
 .book {
   background: #fff;
   border: 1px solid #eef1f6;
-  border-radius: 14px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 22px;
   cursor: pointer;
-  min-height: 150px;
+  min-height: 158px;
   display: flex;
   flex-direction: column;
-  transition: all 0.2s;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   box-shadow: 0 2px 8px rgba(30, 41, 59, 0.04);
 }
 .book:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   border-color: #c7d2fe;
-  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.12);
+  box-shadow: 0 12px 28px rgba(79, 70, 229, 0.12);
 }
 .book.picked {
   border-color: #6366f1;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.18);
+  box-shadow: 0 8px 26px rgba(99, 102, 241, 0.18);
+}
+.book-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
 .cat {
-  align-self: flex-start;
-  margin-bottom: 12px;
   border-radius: 999px;
+}
+.check {
+  color: #4f46e5;
+  font-size: 20px;
 }
 .name {
   font-size: 20px;
@@ -128,11 +146,19 @@ loadBooks()
 .count {
   color: #9aa3b2;
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
-.picked-tag {
+.hover-cta {
   color: #6366f1;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.book:hover .hover-cta {
+  opacity: 1;
 }
 .actions {
   text-align: center;

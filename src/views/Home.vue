@@ -23,40 +23,34 @@
 
     <!-- 今日概览 -->
     <section class="stat-grid">
-      <div class="stat-card new">
+      <el-card shadow="hover" class="stat-card new" body-class="stat-body">
         <div class="stat-icon">📖</div>
-        <div>
-          <div class="stat-num">{{ learning.summary.total_new }}</div>
-          <div class="stat-label">今日新学</div>
-        </div>
-      </div>
-      <div class="stat-card due">
+        <el-statistic title="今日新学 / 目标" :value="learning.summary.total_new">
+          <template #suffix><span class="suffix">/ {{ settings.dailyTarget }}</span></template>
+        </el-statistic>
+      </el-card>
+      <el-card shadow="hover" class="stat-card due" body-class="stat-body">
         <div class="stat-icon">🔁</div>
-        <div>
-          <div class="stat-num">{{ learning.summary.total_due }}</div>
-          <div class="stat-label">今日复习</div>
-        </div>
-      </div>
-      <div class="stat-card mastered">
+        <el-statistic title="今日复习" :value="learning.summary.total_due" />
+      </el-card>
+      <el-card shadow="hover" class="stat-card mastered" body-class="stat-body">
         <div class="stat-icon">🏆</div>
-        <div>
-          <div class="stat-num">{{ learning.summary.mastered }}</div>
-          <div class="stat-label">已掌握</div>
-        </div>
-      </div>
+        <el-statistic title="已掌握" :value="learning.summary.mastered" />
+      </el-card>
     </section>
 
-    <section class="progress-panel card">
+    <el-card class="progress-panel" body-class="progress-body">
       <div class="progress-head">
-        <span class="prog-title">今日词汇任务</span>
+        <span class="prog-title">📌 今日词汇任务</span>
         <span class="prog-tip">完成全部卡片即可打卡</span>
       </div>
-      <el-progress :percentage="computedProgress" :stroke-width="14" :show-text="false" />
+      <el-progress :percentage="computedProgress" :stroke-width="14" :show-text="false"
+        class="prog-bar" />
       <div class="progress-foot">
-        <span>{{ doneCount }} / {{ totalCount }} 张</span>
+        <span class="done-text">已完成 <b>{{ doneCount }}</b> / {{ totalCount }} 张</span>
         <el-button text type="primary" @click="$router.push('/learning')">去学习 →</el-button>
       </div>
-    </section>
+    </el-card>
   </div>
 </template>
 
@@ -64,11 +58,13 @@
 import { computed, onMounted, reactive } from 'vue'
 import { useLearningStore } from '@/stores/learning'
 import { useUserStore } from '@/stores/user'
+import { useSettingsStore } from '@/stores/settings'
 import StreakBadge from '@/components/common/StreakBadge.vue'
 import { getDashboardStats } from '@/api/stats'
 
 const learning = useLearningStore()
 const userStore = useUserStore()
+const settings = useSettingsStore()
 
 // 每日打卡数据（复用 stats 接口）
 const streak = reactive({ current_streak_days: 0, max_streak_days: 0 })
@@ -98,15 +94,28 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 24px;
   background: linear-gradient(135deg, #eef0ff 0%, #f5f3ff 50%, #eef7ff 100%);
   border: 1px solid #e3e6ff;
   border-radius: 18px;
-  padding: 28px 32px;
-  margin-bottom: 20px;
+  padding: 32px 36px;
+  margin-bottom: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -60px;
+  top: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.12), transparent 70%);
 }
 .hello {
-  margin: 0 0 6px;
-  font-size: 26px;
+  margin: 0 0 8px;
+  font-size: 28px;
   font-weight: 800;
   color: #1f2430;
 }
@@ -114,73 +123,109 @@ onMounted(async () => {
   color: #4f46e5;
 }
 .sub {
-  margin: 0 0 18px;
+  margin: 0 0 20px;
   color: #6b7280;
+  font-size: 15px;
 }
 .cta {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 .hero-right {
   text-align: center;
+  flex-shrink: 0;
 }
 .hero-note {
-  margin-top: 8px;
+  margin-top: 10px;
   color: #8a93a6;
   font-size: 13px;
 }
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 18px;
+  margin-bottom: 22px;
 }
 .stat-card {
+  border-radius: 16px;
+  border: 1px solid #eef1f6;
+}
+.stat-card :deep(.el-card__body.stat-body) {
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: #fff;
-  border: 1px solid #eef1f6;
-  border-radius: 14px;
-  padding: 18px 20px;
-  box-shadow: 0 2px 8px rgba(30, 41, 59, 0.05);
+  gap: 16px;
+  padding: 22px;
 }
 .stat-icon {
-  font-size: 28px;
+  font-size: 30px;
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  flex-shrink: 0;
 }
-.stat-num {
-  font-size: 26px;
-  font-weight: 800;
-}
-.stat-card.new .stat-num { color: #4f46e5; }
-.stat-card.due .stat-num { color: #f59e0b; }
-.stat-card.mastered .stat-num { color: #22c55e; }
-.stat-label {
+.stat-card.new .stat-icon { background: #eef0ff; }
+.stat-card.due .stat-icon { background: #fff4e5; }
+.stat-card.mastered .stat-icon { background: #e8f8ee; }
+.stat-card :deep(.el-statistic__head) {
   color: #8a93a6;
   font-size: 13px;
-  margin-top: 2px;
+  margin-bottom: 2px;
 }
+.stat-card :deep(.el-statistic__content) {
+  font-size: 28px;
+  font-weight: 800;
+}
+.stat-card.new :deep(.el-statistic__content) { color: #4f46e5; }
+.stat-card :deep(.el-statistic__content .suffix) {
+  font-size: 16px;
+  font-weight: 600;
+  margin-left: 2px;
+}
+.stat-card.due :deep(.el-statistic__content) { color: #f59e0b; }
+.stat-card.mastered :deep(.el-statistic__content) { color: #22c55e; }
 .progress-panel {
-  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid #eef1f6;
+}
+.progress-panel :deep(.el-card__body.progress-body) {
+  padding: 24px;
 }
 .progress-head {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 12px;
+  align-items: center;
+  margin-bottom: 16px;
 }
 .prog-title {
   font-weight: 700;
+  font-size: 16px;
 }
 .prog-tip {
   color: #9aa3b2;
   font-size: 12px;
 }
+.prog-bar :deep(.el-progress-bar__outer) {
+  background: #eef1f6;
+}
 .progress-foot {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 12px;
+}
+.done-text {
   color: #8a93a6;
   font-size: 13px;
+}
+.done-text b {
+  color: #4f46e5;
+}
+@media (max-width: 720px) {
+  .hero { flex-direction: column; align-items: flex-start; }
+  .stat-grid { grid-template-columns: 1fr; }
 }
 </style>

@@ -5,42 +5,73 @@
       <WordProgress :total="learning.queue.length" :done="learning.queueIndex" />
     </div>
 
-    <div v-if="learning.current" class="stage">
-      <div class="meta">
-        <span class="chip new" v-if="!learning.current.record_id || learning.current.repetition === 0">新词</span>
-        <span class="chip due" v-else>复习</span>
-        <span class="count">{{ learning.queueIndex + 1 }} / {{ learning.queue.length }}</span>
+    <div class="mode-switch">
+      <el-segmented
+        v-model="mode"
+        :options="[
+          { label: '🂡 卡片学习', value: 'card' },
+          { label: '⌨️ 键盘拼写', value: 'spell' }
+        ]"
+        size="large"
+      />
+    </div>
+
+    <!-- A. 卡片学习（不背单词风格） -->
+    <template v-if="mode === 'card'">
+      <div v-if="learning.current" class="stage">
+        <div class="meta">
+          <el-tag size="large" round :type="chipType">{{ chipText }}</el-tag>
+          <span class="count">第 {{ learning.queueIndex + 1 }} / {{ learning.queue.length }} 词</span>
+        </div>
+
+        <div class="card-glows">
+          <span class="glow glow-a"></span>
+          <span class="glow glow-b"></span>
+        </div>
+
+        <WordCard :card="learning.current" :flipped="flipped" @flip="flipped = !flipped" />
+
+        <transition name="fade">
+          <div v-if="flipped" class="stage-bottom">
+            <ReviewRating @rate="onRate" />
+          </div>
+          <div v-else class="tip">👆 点击卡片翻面，回忆它的释义</div>
+        </transition>
       </div>
 
-      <WordCard :card="learning.current" :flipped="flipped" @flip="flipped = !flipped" />
+      <div v-else class="done empty-wrap">
+        <el-empty :description="learning.queue.length ? '今日卡片已全部完成' : '今天还没有待学卡片'">
+          <el-button type="primary" round size="large" @click="$router.push('/')">
+            返回首页
+          </el-button>
+        </el-empty>
+      </div>
+    </template>
 
-      <transition name="fade">
-        <div v-if="flipped" class="stage-bottom">
-          <ReviewRating @rate="onRate" />
-        </div>
-        <div v-else class="tip">点击卡片翻面，回忆它的释义</div>
-      </transition>
-    </div>
-
-    <div v-else class="done empty-wrap">
-      <el-empty :description="learning.queue.length ? '今日卡片已全部完成' : '今天还没有待学卡片'">
-        <el-button type="primary" round size="large" @click="$router.push('/')">
-          返回首页
-        </el-button>
-      </el-empty>
-    </div>
+    <!-- B. 键盘拼写（qwerty-learner 风格） -->
+    <template v-else>
+      <SpellingPractice :queue="learning.queue" />
+    </template>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import WordCard from '@/components/word/WordCard.vue'
 import ReviewRating from '@/components/word/ReviewRating.vue'
 import WordProgress from '@/components/word/WordProgress.vue'
+import SpellingPractice from '@/components/word/SpellingPractice.vue'
 import { useLearningStore } from '@/stores/learning'
 
 const learning = useLearningStore()
 const flipped = ref(false)
+const mode = ref('card') // card | spell
+
+const isNew = computed(
+  () => !learning.current?.record_id || learning.current.repetition === 0
+)
+const chipText = computed(() => (isNew.value ? '🌟 新词' : '🔁 复习'))
+const chipType = computed(() => (isNew.value ? 'warning' : 'primary'))
 
 async function onRate(quality) {
   await learning.rateCard(quality)
@@ -61,37 +92,69 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 18px;
 }
 .title {
   margin: 0;
+}
+.mode-switch {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 26px;
+}
+.mode-switch :deep(.el-segmented) {
+  background: var(--app-fill-soft, #eceef7);
+  border-radius: 999px;
+  padding: 4px;
+}
+.mode-switch :deep(.el-segmented__item) {
+  font-weight: 600;
+  border-radius: 999px;
+}
+.mode-switch :deep(.el-segmented__item-selected) {
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.24);
+}
+.card-glows {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  height: 0;
+  display: flex;
+  justify-content: center;
+}
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.glow-a {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, #a5a4ff, transparent 65%);
+  top: -40px;
+  left: 12%;
+}
+.glow-b {
+  width: 170px;
+  height: 170px;
+  background: radial-gradient(circle, #c7b8ff, transparent 65%);
+  top: 30px;
+  right: 14%;
+  opacity: 0.4;
 }
 .meta {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin: 8px 0 16px;
-  color: #909399;
-  font-size: 14px;
-}
-.chip {
-  padding: 2px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.chip.new {
-  background: #fff2e8;
-  color: #ff7a3d;
-}
-.chip.due {
-  background: #e8f4ff;
-  color: #4090ff;
+  gap: 12px;
+  margin: 10px 0 18px;
 }
 .count {
   color: #aeb6c4;
   letter-spacing: 0.5px;
+  font-size: 14px;
 }
 .stage {
   display: flex;
@@ -99,9 +162,13 @@ onMounted(async () => {
   align-items: center;
 }
 .tip {
-  margin-top: 18px;
-  color: #b0b7c3;
+  margin-top: 20px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--app-fill-soft, #f4f5ff);
+  color: var(--app-text-secondary, #7c87a0);
   font-size: 14px;
+  border: 1px solid var(--app-fill-soft-border, #e6e5ff);
 }
 .stage-bottom {
   width: 100%;
@@ -109,7 +176,7 @@ onMounted(async () => {
 .done {
   display: flex;
   justify-content: center;
-  padding-top: 40px;
+  padding-top: 48px;
 }
 .fade-enter-active,
 .fade-leave-active {

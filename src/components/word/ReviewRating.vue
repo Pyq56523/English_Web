@@ -19,10 +19,9 @@
 defineEmits(['rate'])
 
 const options = [
-  { value: 0, label: '不认识', type: 'again' },
-  { value: 3, label: '有点模糊', type: 'hard' },
-  { value: 4, label: '认识了', type: 'good' },
-  { value: 5, label: '很熟练', type: 'easy' }
+  { value: 0, label: '忘记', type: 'again' },
+  { value: 3, label: '模糊', type: 'hard' },
+  { value: 5, label: '认识', type: 'easy' }
 ]
 </script>
 

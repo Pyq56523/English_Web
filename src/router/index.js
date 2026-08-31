@@ -1,5 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { meApi } from '@/api/auth'
+
+// 本次会话内的 token 校验结果缓存（只向后端校验一次，避免每次跳转都请求）
+let validatedToken = null
 
 const routes = [
   {
@@ -34,10 +38,29 @@ const router = createRouter({
 })
 
 // 导航守卫：未登录访问受保护页 → 跳转登录
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (to.meta.public) return true
   const userStore = useUserStore()
-  if (!userStore.token) return { name: 'Login' }
+
+  // 无 token → 登出并回登录页
+  if (!userStore.token) {
+    userStore.logout()
+    return { name: 'Login' }
+  }
+
+  // 本会话内未校验过该 token，则向后端 /auth/me 校验其有效性
+  if (validatedToken !== userStore.token) {
+    try {
+      const user = await meApi()
+      userStore.user = user
+      localStorage.setItem('el_user', JSON.stringify(user))
+      validatedToken = userStore.token
+    } catch (e) {
+      validatedToken = null
+      userStore.logout()
+      return { name: 'Login' }
+    }
+  }
   return true
 })
 

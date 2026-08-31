@@ -17,10 +17,6 @@
         <el-icon><Reading /></el-icon>
         <span>开始学习</span>
       </el-menu-item>
-      <el-menu-item index="/grammar">
-        <el-icon><EditPen /></el-icon>
-        <span>语法课</span>
-      </el-menu-item>
       <el-menu-item index="/phrases">
         <el-icon><ChatDotRound /></el-icon>
         <span>常用短语</span>
@@ -38,7 +34,6 @@ import {
   HomeFilled,
   Notebook,
   Reading,
-  EditPen,
   ChatDotRound,
   DataAnalysis
 } from '@element-plus/icons-vue'

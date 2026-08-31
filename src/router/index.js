@@ -25,7 +25,6 @@ const routes = [
       { path: '', name: 'Home', component: () => import('@/views/Home.vue') },
       { path: 'books', name: 'WordBooks', component: () => import('@/views/WordBooks.vue') },
       { path: 'learning', name: 'Learning', component: () => import('@/views/Learning.vue') },
-      { path: 'grammar', name: 'Grammar', component: () => import('@/views/Grammar.vue') },
       { path: 'phrases', name: 'Phrase', component: () => import('@/views/Phrase.vue') },
       { path: 'stats', name: 'Statistics', component: () => import('@/views/Statistics.vue') }
     ]

@@ -1,0 +1,47 @@
+@use './variables.scss' as *;
+
+/* 全局基础样式 */
+html,
+body,
+#app {
+  height: 100%;
+}
+
+.page-container {
+  padding: 12px 24px 24px;
+}
+
+/* 通用卡片 */
+.card {
+  background: $card;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: $shadow;
+}
+
+/* 页面标题 */
+.page-container h2.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: $text;
+  letter-spacing: 0.3px;
+}
+
+/* 数字强调 */
+.stat-num {
+  color: $primary;
+  font-weight: 700;
+}
+
+/* 滚动条美化（可选） */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d3d7e0;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

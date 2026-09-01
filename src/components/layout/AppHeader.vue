@@ -15,7 +15,8 @@
       </span>
       <template #dropdown>
         <el-dropdown-menu>
-          <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+          <el-dropdown-item command="profile">👤 个人中心</el-dropdown-item>
+          <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
         </el-dropdown-menu>
       </template>
     </el-dropdown>
@@ -35,7 +36,9 @@ const week = ['日', '一', '二', '三', '四', '五', '六']
 const today = dayjs().format(`M月D日 · 周${week[dayjs().day()]}`)
 
 function onCommand(cmd) {
-  if (cmd === 'logout') {
+  if (cmd === 'profile') {
+    router.push('/profile')
+  } else if (cmd === 'logout') {
     userStore.logout()
     router.push('/login')
   }

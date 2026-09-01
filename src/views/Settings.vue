@@ -46,13 +46,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { ElMessage } from 'element-plus'
 
 const settings = useSettingsStore()
 const daily = ref(settings.dailyTarget)
 const theme = ref(settings.theme)
+
+onMounted(async () => {
+  // 从后端加载已持久化的每日目标
+  await settings.init()
+  daily.value = settings.dailyTarget
+})
 
 function saveDaily() {
   settings.setDailyTarget(daily.value)

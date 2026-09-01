@@ -172,12 +172,14 @@ function advance() {
   if (index.value >= props.queue.length) {
     finished.value = true
   } else {
+    speakWord() // 进入下一个单词时先朗读一遍英语
     focusInput()
   }
 }
 
 function restart() {
   resetRound()
+  speakWord()
   focusInput()
 }
 
@@ -225,7 +227,10 @@ function charText(i) {
   return '' // 占位
 }
 
-onMounted(() => focusInput())
+onMounted(() => {
+  focusInput()
+  speakWord() // 首个单词自动朗读一遍英语
+})
 watch(
   () => props.queue,
   () => resetRound(),

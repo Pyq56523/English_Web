@@ -25,17 +25,17 @@
     <section class="stat-grid">
       <el-card shadow="hover" class="stat-card new" body-class="stat-body">
         <div class="stat-icon">📖</div>
-        <el-statistic title="今日新学 / 目标" :value="learning.summary.total_new">
+        <el-statistic title="今日新学 / 目标" :value="todayStats.learned">
           <template #suffix><span class="suffix">/ {{ settings.dailyTarget }}</span></template>
         </el-statistic>
       </el-card>
       <el-card shadow="hover" class="stat-card due" body-class="stat-body">
         <div class="stat-icon">🔁</div>
-        <el-statistic title="今日复习" :value="learning.summary.total_due" />
+        <el-statistic title="今日复习" :value="todayStats.reviewed" />
       </el-card>
       <el-card shadow="hover" class="stat-card mastered" body-class="stat-body">
         <div class="stat-icon">🏆</div>
-        <el-statistic title="已掌握" :value="learning.summary.mastered" />
+        <el-statistic title="已掌握" :value="totalStats.mastered" />
       </el-card>
     </section>
 
@@ -68,6 +68,8 @@ const settings = useSettingsStore()
 
 // 每日打卡数据（复用 stats 接口）
 const streak = reactive({ current_streak_days: 0, max_streak_days: 0 })
+const todayStats = reactive({ learned: 0, reviewed: 0 })
+const totalStats = reactive({ mastered: 0 })
 
 const totalCount = computed(() => learning.queue.length)
 const doneCount = computed(() => learning.queueIndex)
@@ -76,12 +78,20 @@ const computedProgress = computed(() =>
 )
 
 onMounted(async () => {
+  settings.init()
   learning.fetchTodayCards()
   try {
     const stats = await getDashboardStats()
     if (stats?.streak) {
       streak.current_streak_days = stats.streak.current_streak_days || 0
       streak.max_streak_days = stats.streak.max_streak_days || 0
+    }
+    if (stats?.today) {
+      todayStats.learned = stats.today.learned || 0
+      todayStats.reviewed = stats.today.reviewed || 0
+    }
+    if (stats?.total) {
+      totalStats.mastered = stats.total.words_mastered || 0
     }
   } catch (e) {
     /* 登录态正常时应可获取，静默处理 */

@@ -5,6 +5,16 @@
       <WordProgress :total="learning.queue.length" :done="learning.queueIndex" />
     </div>
 
+    <!-- 学习方向：学习新词 / 复习 -->
+    <div class="direction-switch">
+      <el-segmented
+        v-model="learning.direction"
+        :options="directionOptions"
+        size="large"
+        @change="onDirectionChange"
+      />
+    </div>
+
     <div class="mode-switch">
       <el-segmented
         v-model="mode"
@@ -40,7 +50,7 @@
       </div>
 
       <div v-else class="done empty-wrap">
-        <el-empty :description="learning.queue.length ? '今日卡片已全部完成' : '今天还没有待学卡片'">
+        <el-empty :description="emptyTip">
           <el-button type="primary" round size="large" @click="$router.push('/')">
             返回首页
           </el-button>
@@ -48,15 +58,15 @@
       </div>
     </template>
 
-    <!-- B. 键盘拼写（qwerty-learner 风格） -->
+    <!-- B. 键盘拼写（qwerty-learner 风格）：拼今天已学的新词 -->
     <template v-else>
-      <SpellingPractice :queue="learning.queue" />
+      <SpellingPractice :queue="learning.learnedCards" />
     </template>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import WordCard from '@/components/word/WordCard.vue'
 import ReviewRating from '@/components/word/ReviewRating.vue'
 import WordProgress from '@/components/word/WordProgress.vue'
@@ -67,16 +77,56 @@ const learning = useLearningStore()
 const flipped = ref(false)
 const mode = ref('card') // card | spell
 
+// 学习方向选项，展示今日可学新词数 / 到期复习数
+const directionOptions = computed(() => [
+  { label: `📖 学习新词 ${learning.summary.learn_count || 0}`, value: 'learn' },
+  { label: `🔁 复习 ${learning.summary.total_due || 0}`, value: 'review' }
+])
+
+function onDirectionChange(dir) {
+  // v-model 已把 direction 改为 dir，这里直接根据新方向重建队列
+  learning.applyDirection()
+  flipped.value = false
+}
+
 const isNew = computed(
   () => !learning.current?.record_id || learning.current.repetition === 0
 )
+const emptyTip = computed(() => {
+  if (learning.queue.length) {
+    return learning.direction === 'review' ? '今日复习已全部完成' : '今日新词已全部学完'
+  }
+  return learning.direction === 'review' ? '今天没有到期的复习词' : '今天没有待学的新词'
+})
 const chipText = computed(() => (isNew.value ? '🌟 新词' : '🔁 复习'))
 const chipType = computed(() => (isNew.value ? 'warning' : 'primary'))
+
+function speakWord() {
+  const word = learning.current?.word
+  if (!word || !('speechSynthesis' in window)) return
+  try {
+    window.speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance(word)
+    u.lang = 'en-US'
+    window.speechSynthesis.speak(u)
+  } catch (e) {
+    /* 忽略发音失败 */
+  }
+}
 
 async function onRate(quality) {
   await learning.rateCard(quality)
   flipped.value = false
 }
+
+// 换到新卡片时自动朗读一次英语单词
+watch(
+  () => learning.current,
+  (card) => {
+    if (card) speakWord()
+  },
+  { immediate: true }
+)
 
 onMounted(async () => {
   if (!learning.loaded) await learning.fetchTodayCards()
@@ -101,6 +151,20 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   margin-bottom: 26px;
+}
+.direction-switch {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.direction-switch :deep(.el-segmented) {
+  background: var(--app-fill-soft, #eceef7);
+  border-radius: 999px;
+  padding: 4px;
+}
+.direction-switch :deep(.el-segmented__item) {
+  font-weight: 600;
+  border-radius: 999px;
 }
 .mode-switch :deep(.el-segmented) {
   background: var(--app-fill-soft, #eceef7);

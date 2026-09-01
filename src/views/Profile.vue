@@ -35,14 +35,6 @@
             <span class="info-lbl">注册时间</span>
             <span class="info-val">{{ formatDate(userStore.user?.created_at) }}</span>
           </div>
-          <div class="info-row">
-            <span class="info-lbl">地区</span>
-            <span v-if="regionText" class="info-val">{{ regionText }}</span>
-            <span v-else class="info-val region-missing" @click="startEdit('info')">
-              <el-icon><WarningFilled /></el-icon>
-              未知，点击填写
-            </span>
-          </div>
         </div>
 
         <div class="bio-block">
@@ -79,18 +71,6 @@
                 <el-radio value="female">女</el-radio>
                 <el-radio value="other">保密</el-radio>
               </el-radio-group>
-            </el-form-item>
-
-            <el-form-item label="所在省份">
-              <el-select v-model="form.province" placeholder="请选择省份" filterable clearable style="width:100%" @change="onProvinceChange">
-                <el-option v-for="c in provinces" :key="c" :label="c" :value="c" />
-              </el-select>
-            </el-form-item>
-
-            <el-form-item label="所在城市">
-              <el-select v-model="form.city" placeholder="请选择城市" filterable clearable :disabled="!form.province" style="width:100%">
-                <el-option v-for="c in cities" :key="c" :label="c" :value="c" />
-              </el-select>
             </el-form-item>
 
             <el-form-item label="头像" class="full-width">
@@ -166,20 +146,11 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { WarningFilled } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { updateMeApi, changePasswordApi, uploadAvatarApi } from '@/api/auth'
 import dayjs from 'dayjs'
-import { REGION_DATA } from '@/utils/regionData'
 
 const userStore = useUserStore()
-
-const provinces = Object.keys(REGION_DATA)
-
-const cities = computed(() => {
-  if (!form.province) return []
-  return REGION_DATA[form.province] || []
-})
 
 // null = 展示, 'info' = 修改信息, 'password' = 修改密码
 const editMode = ref(null)
@@ -190,9 +161,7 @@ const form = reactive({
   avatar: '',
   age: null,
   gender: '',
-  bio: '',
-  province: '',
-  city: ''
+  bio: ''
 })
 
 const pwdForm = reactive({
@@ -213,15 +182,6 @@ const genderLabel = computed(() => {
   return map[userStore.user?.gender] || '未设置'
 })
 
-const regionText = computed(() => {
-  const p = userStore.user?.province
-  const c = userStore.user?.city
-  if (p && c) return `${p} · ${c}`
-  if (p) return p
-  if (c) return c
-  return ''
-})
-
 function formatDate(iso) {
   if (!iso) return '—'
   return dayjs(iso).format('YYYY-MM-DD')
@@ -235,12 +195,6 @@ function loadForm() {
   form.age = u.age ?? null
   form.gender = u.gender || ''
   form.bio = u.bio || ''
-  form.province = u.province || ''
-  form.city = u.city || ''
-}
-
-function onProvinceChange() {
-  form.city = ''
 }
 
 onMounted(loadForm)

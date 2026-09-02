@@ -41,6 +41,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWordBookStore } from '@/stores/wordBook'
+import { useSettingsStore } from '@/stores/settings'
 import { startLearning } from '@/api/learning'
 import { Notebook, CircleCheckFilled } from '@element-plus/icons-vue'
 
@@ -57,6 +58,12 @@ async function loadBooks() {
   const params = {}
   if (category.value) params.category = category.value
   await wordBook.fetchBooks(params)
+  // 恢复之前选中的词书（跨页面跳转后 pickedId 仍正确）
+  const settings = useSettingsStore()
+  if (settings.currentBookId) {
+    pickedId.value = settings.currentBookId
+    wordBook.restoreCurrent(settings.currentBookId)
+  }
 }
 async function select(book) {
   pickedId.value = book.id
@@ -92,8 +99,8 @@ loadBooks()
   gap: 18px;
 }
 .book {
-  background: #fff;
-  border: 1px solid #eef1f6;
+  background: var(--app-card, #fff);
+  border: 1px solid var(--app-border, #eef1f6);
   border-radius: 16px;
   padding: 22px;
   cursor: pointer;
@@ -105,11 +112,11 @@ loadBooks()
 }
 .book:hover {
   transform: translateY(-4px);
-  border-color: #c7d2fe;
+  border-color: var(--app-border-accent, #c7d2fe);
   box-shadow: 0 12px 28px rgba(79, 70, 229, 0.12);
 }
 .book.picked {
-  border-color: #6366f1;
+  border-color: var(--app-primary, #6366f1);
   box-shadow: 0 8px 26px rgba(99, 102, 241, 0.18);
 }
 .book-top {
@@ -122,18 +129,18 @@ loadBooks()
   border-radius: 999px;
 }
 .check {
-  color: #4f46e5;
+  color: var(--app-primary, #4f46e5);
   font-size: 20px;
 }
 .name {
   font-size: 20px;
   font-weight: 700;
-  color: #1f2430;
+  color: var(--app-text, #1f2430);
 }
 .desc {
   margin-top: 6px;
   font-size: 13px;
-  color: #8a93a6;
+  color: var(--app-text-secondary, #8a93a6);
   line-height: 1.5;
   flex: 1;
 }
@@ -144,14 +151,14 @@ loadBooks()
   margin-top: 14px;
 }
 .count {
-  color: #9aa3b2;
+  color: var(--app-text-muted, #9aa3b2);
   font-size: 13px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 .hover-cta {
-  color: #6366f1;
+  color: var(--app-primary, #6366f1);
   font-size: 13px;
   font-weight: 600;
   opacity: 0;

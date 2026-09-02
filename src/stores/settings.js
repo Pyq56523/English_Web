@@ -17,10 +17,10 @@ function loadTheme() {
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
     dailyTarget: Number(localStorage.getItem(DAILY_KEY) || 20),
-    theme: loadTheme()
+    theme: loadTheme(),
+    currentBookId: null  // 当前所选单词书 id（后端持久化）
   }),
   actions: {
-    /** 把 theme 同步到 <html class="dark">，供 Element Plus 深色变量适配 */
     applyTheme() {
       const root = document.documentElement
       if (this.theme === 'dark') {
@@ -29,7 +29,7 @@ export const useSettingsStore = defineStore('settings', {
         root.classList.remove('dark')
       }
     },
-    /** 从后端加载已持久化的设置（如每日学习目标） */
+    /** 从后端加载已持久化的设置 */
     async init() {
       try {
         const s = await getSettings()
@@ -37,19 +37,25 @@ export const useSettingsStore = defineStore('settings', {
           this.dailyTarget = Number(s.daily_target)
           localStorage.setItem(DAILY_KEY, String(this.dailyTarget))
         }
+        if (s?.current_book_id) {
+          this.currentBookId = Number(s.current_book_id)
+        }
       } catch (e) {
         /* 未登录或网络失败时保持本地默认值 */
       }
     },
-    /** 更新每日目标：本地即时生效，并尽力同步到后端 */
     async setDailyTarget(value) {
       this.dailyTarget = Number(value)
       localStorage.setItem(DAILY_KEY, String(this.dailyTarget))
       try {
         await updateSettings({ daily_target: this.dailyTarget })
-      } catch (e) {
-        /* 后端同步失败时至少保留本地值 */
-      }
+      } catch (e) { /* ignore */ }
+    },
+    async setCurrentBook(bookId) {
+      this.currentBookId = bookId
+      try {
+        await updateSettings({ daily_target: this.dailyTarget, current_book_id: bookId })
+      } catch (e) { /* ignore */ }
     },
     setTheme(theme) {
       this.theme = theme === 'dark' ? 'dark' : 'light'

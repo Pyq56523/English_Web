@@ -7,12 +7,11 @@
           欢迎回来，
           <span class="name">{{ userStore.user?.username || '同学' }}</span>
         </h1>
-        <p class="sub">保持节奏，每天记一点，积少成多 🌱</p>
+        <p class="sub">坚持每天学习，让记忆更持久 🌱</p>
         <div class="cta">
           <el-button type="primary" size="large" round @click="$router.push('/learning')">
             🚀 开始今日学习
           </el-button>
-          <el-button size="large" round @click="$router.push('/books')">选择单词书</el-button>
         </div>
       </div>
       <div class="hero-right">
@@ -21,125 +20,223 @@
       </div>
     </section>
 
-    <!-- 今日概览 -->
+    <!-- 当前单词书 -->
+    <el-card class="book-card" body-class="book-body" v-if="wordBook.current">
+      <div class="book-icon">📚</div>
+      <div class="book-info">
+        <div class="book-name">{{ wordBook.current.name }}</div>
+        <div class="book-meta">
+          <el-tag size="small" effect="light">{{ wordBook.current.category }}</el-tag>
+          <span class="book-count">{{ wordBook.current.word_count }} 词</span>
+        </div>
+      </div>
+      <div class="book-actions">
+        <el-button type="primary" round size="small" @click="$router.push('/books')">更换词书</el-button>
+      </div>
+    </el-card>
+    <el-card class="book-card book-card-empty" body-class="book-body" v-else>
+      <div class="book-icon">📚</div>
+      <div class="book-info">
+        <div class="book-name">还未选择单词书</div>
+        <div class="book-meta"><span class="book-count">选择一个词书开始学习吧</span></div>
+      </div>
+      <div class="book-actions">
+        <el-button type="primary" round size="small" @click="$router.push('/books')">去选择</el-button>
+      </div>
+    </el-card>
+
+    <!-- 学习概览 -->
     <section class="stat-grid">
       <el-card shadow="hover" class="stat-card new" body-class="stat-body">
-        <div class="stat-icon">📖</div>
-        <el-statistic title="今日新学 / 目标" :value="todayStats.learned">
-          <template #suffix><span class="suffix">/ {{ settings.dailyTarget }}</span></template>
+        <div class="stat-icon">📈</div>
+        <el-statistic title="已学 / 所选词书总词数" :value="totalStats.learned">
+          <template #suffix><span class="suffix">/ {{ totalStats.total }}</span></template>
         </el-statistic>
       </el-card>
       <el-card shadow="hover" class="stat-card due" body-class="stat-body">
-        <div class="stat-icon">🔁</div>
-        <el-statistic title="今日复习" :value="todayStats.reviewed" />
+        <div class="stat-icon">📖</div>
+        <el-statistic title="今日学习" :value="todayStats.reviewed" />
       </el-card>
-      <el-card shadow="hover" class="stat-card mastered" body-class="stat-body">
-        <div class="stat-icon">🏆</div>
-        <el-statistic title="已掌握" :value="totalStats.mastered" />
+      <el-card shadow="hover" class="stat-card days" body-class="stat-body">
+        <div class="stat-icon">🗓️</div>
+        <el-statistic title="累计学习天数" :value="totalStats.daysTotal" />
       </el-card>
     </section>
 
-    <el-card class="progress-panel" body-class="progress-body">
-      <div class="progress-head">
-        <span class="prog-title">📌 今日词汇任务</span>
-        <span class="prog-tip">完成全部卡片即可打卡</span>
+    <!-- 签到日历（每周 7 天） -->
+    <el-card class="record-panel" body-class="record-body">
+      <div class="record-head">
+        <span class="prog-title">📅 签到日历</span>
+        <el-date-picker
+          v-model="range"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          :clearable="false"
+          size="small"
+          @change="onRangeChange"
+        />
       </div>
-      <el-progress :percentage="computedProgress" :stroke-width="14" :show-text="false"
-        class="prog-bar" />
-      <div class="progress-foot">
-        <span class="done-text">已完成 <b>{{ doneCount }}</b> / {{ totalCount }} 张</span>
-        <el-button text type="primary" @click="$router.push('/learning')">去学习 →</el-button>
+
+      <div class="weekday-row">
+        <div v-for="w in weekdayNames" :key="w" class="weekday">{{ w }}</div>
+      </div>
+      <div class="day-row">
+        <div
+          v-for="d in calendarDays"
+          :key="d.date"
+          class="day-cell"
+          :class="{ active: d.reviewed > 0, today: d.isToday }"
+        >
+          <div class="day-circle">
+            <template v-if="d.isToday">今</template>
+            <template v-else>{{ d.day }}</template>
+          </div>
+          <div v-if="d.reviewed > 0" class="day-round">{{ d.reviewed }}</div>
+        </div>
+      </div>
+
+      <div v-if="weekReviewed > 0 || weekLearned > 0" class="week-summary">
+        本周累计：学习 {{ weekReviewed }} 词 · 新学 {{ weekLearned }} 词
       </div>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive } from 'vue'
-import { useLearningStore } from '@/stores/learning'
+import { computed, onMounted, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
+import { useWordBookStore } from '@/stores/wordBook'
 import { useSettingsStore } from '@/stores/settings'
 import StreakBadge from '@/components/common/StreakBadge.vue'
 import { getDashboardStats } from '@/api/stats'
 
-const learning = useLearningStore()
 const userStore = useUserStore()
-const settings = useSettingsStore()
+const wordBook = useWordBookStore()
+const settingsStore = useSettingsStore()
 
-// 每日打卡数据（复用 stats 接口）
-const streak = reactive({ current_streak_days: 0, max_streak_days: 0 })
-const todayStats = reactive({ learned: 0, reviewed: 0 })
-const totalStats = reactive({ mastered: 0 })
+const streak = ref({ current_streak_days: 0, max_streak_days: 0 })
+const todayStats = ref({ reviewed: 0 })
+const totalStats = ref({ learned: 0, total: 0, daysTotal: 0 })
+const days = ref([])
 
-const totalCount = computed(() => learning.queue.length)
-const doneCount = computed(() => learning.queueIndex)
-const computedProgress = computed(() =>
-  totalCount.value > 0 ? Math.round((doneCount.value / totalCount.value) * 100) : 0
-)
+const weekdayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+
+function thisWeekRange() {
+  const today = new Date()
+  const dow = today.getDay()
+  const diffToMon = (dow + 6) % 7
+  const mon = new Date(today)
+  mon.setDate(today.getDate() - diffToMon)
+  const sun = new Date(mon)
+  sun.setDate(mon.getDate() + 6)
+  return [mon, sun]
+}
+const range = ref(thisWeekRange())
+
+function fmt(d) {
+  if (!d) return ''
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mm}-${dd}`
+}
+
+async function loadDashboard() {
+  try {
+    const stats = await getDashboardStats({
+      start_date: fmt(range.value?.[0]),
+      end_date: fmt(range.value?.[1])
+    })
+    if (stats?.streak) streak.value = stats.streak
+    if (stats?.today) todayStats.value = stats.today
+    if (stats?.total) {
+      totalStats.value = {
+        learned: stats.total.words_learned || 0,
+        total: stats.total.words_total || 0,
+        daysTotal: stats.total.days_total || 0
+      }
+    }
+    days.value = stats?.days || []
+  } catch (e) {
+    /* 静默处理 */
+  }
+}
+
+function onRangeChange() {
+  loadDashboard()
+}
+
+const calendarDays = computed(() => {
+  const [start, end] = range.value || thisWeekRange()
+  const dateMap = {}
+  for (const d of days.value) dateMap[d.date] = d
+  const result = []
+  const todayStr = fmt(new Date())
+  let cur = new Date(start)
+  while (cur <= end) {
+    const key = fmt(cur)
+    const info = dateMap[key] || { reviewed: 0, learned: 0 }
+    result.push({
+      date: key,
+      day: cur.getDate(),
+      reviewed: info.reviewed || 0,
+      learned: info.learned || 0,
+      isToday: key === todayStr
+    })
+    cur.setDate(cur.getDate() + 1)
+  }
+  return result
+})
+
+const weekReviewed = computed(() => calendarDays.value.reduce((s, d) => s + d.reviewed, 0))
+const weekLearned = computed(() => calendarDays.value.reduce((s, d) => s + d.learned, 0))
 
 onMounted(async () => {
-  settings.init()
-  learning.fetchTodayCards()
-  try {
-    const stats = await getDashboardStats()
-    if (stats?.streak) {
-      streak.current_streak_days = stats.streak.current_streak_days || 0
-      streak.max_streak_days = stats.streak.max_streak_days || 0
-    }
-    if (stats?.today) {
-      todayStats.learned = stats.today.learned || 0
-      todayStats.reviewed = stats.today.reviewed || 0
-    }
-    if (stats?.total) {
-      totalStats.mastered = stats.total.words_mastered || 0
-    }
-  } catch (e) {
-    /* 登录态正常时应可获取，静默处理 */
-  }
+  await settingsStore.init()
+  await wordBook.fetchBooks()
+  if (settingsStore.currentBookId) wordBook.restoreCurrent(settingsStore.currentBookId)
+  await loadDashboard()
 })
 </script>
 
 <style scoped>
+.home {
+  max-width: 960px;
+}
 .hero {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  background: linear-gradient(135deg, #eef0ff 0%, #f5f3ff 50%, #eef7ff 100%);
-  border: 1px solid #e3e6ff;
-  border-radius: 18px;
-  padding: 32px 36px;
-  margin-bottom: 22px;
+  background: linear-gradient(135deg, var(--app-primary-bg, #eef0ff) 0%, var(--app-primary-soft, #f5f3ff) 50%, var(--app-primary-bg2, #eef7ff) 100%);
+  border: 1px solid var(--app-border-accent, #e3e6ff);
+  border-radius: 16px;
+  padding: 26px 32px;
+  margin-bottom: 20px;
   position: relative;
   overflow: hidden;
 }
-.hero::after {
-  content: '';
-  position: absolute;
-  right: -60px;
-  top: -60px;
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.12), transparent 70%);
-}
 .hello {
-  margin: 0 0 8px;
-  font-size: 28px;
+  margin: 0 0 6px;
+  font-size: 24px;
   font-weight: 800;
-  color: #1f2430;
+  color: var(--app-text, #1f2430);
 }
 .hello .name {
-  color: #4f46e5;
+  color: var(--app-primary, #4f46e5);
 }
 .sub {
-  margin: 0 0 20px;
-  color: #6b7280;
-  font-size: 15px;
+  margin: 0 0 16px;
+  color: var(--app-text-secondary, #6b7280);
+  font-size: 14px;
+}
+.book-name {
+  color: var(--app-primary, #4f46e5);
 }
 .cta {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 .hero-right {
@@ -147,95 +244,195 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .hero-note {
-  margin-top: 10px;
-  color: #8a93a6;
+  margin-top: 8px;
+  color: var(--app-text-muted, #8a93a6);
   font-size: 13px;
 }
+
+/* 统计卡片 */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  margin-bottom: 22px;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.book-card {
+  border-radius: 14px;
+  border: 1px solid var(--app-border, #eef1f6);
+  margin-bottom: 16px;
+}
+.book-card :deep(.el-card__body.book-body) {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+}
+.book-icon {
+  font-size: 26px;
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--app-primary-bg, #eef0ff);
+  flex-shrink: 0;
+}
+.book-info {
+  flex: 1;
+  min-width: 0;
+}
+.book-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--app-text, #1f2430);
+}
+.book-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.book-count {
+  color: var(--app-text-secondary, #8a93a6);
+  font-size: 13px;
+}
+.book-card-empty .book-icon {
+  background: var(--app-bg, #f5f7fa);
+}
+.book-actions {
+  flex-shrink: 0;
 }
 .stat-card {
-  border-radius: 16px;
-  border: 1px solid #eef1f6;
+  border-radius: 14px;
+  border: 1px solid var(--app-border, #eef1f6);
 }
 .stat-card :deep(.el-card__body.stat-body) {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 22px;
+  gap: 14px;
+  padding: 18px 20px;
 }
 .stat-icon {
-  font-size: 30px;
-  width: 52px;
-  height: 52px;
+  font-size: 26px;
+  width: 46px;
+  height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: 12px;
   flex-shrink: 0;
 }
-.stat-card.new .stat-icon { background: #eef0ff; }
-.stat-card.due .stat-icon { background: #fff4e5; }
-.stat-card.mastered .stat-icon { background: #e8f8ee; }
+.stat-card.new .stat-icon { background: var(--app-primary-bg, #eef0ff); }
+.stat-card.due .stat-icon { background: var(--app-primary-soft, #f3e8ff); }
+.stat-card.days .stat-icon { background: var(--app-primary-bg2, #e0f2fe); }
 .stat-card :deep(.el-statistic__head) {
-  color: #8a93a6;
+  color: var(--app-text-secondary, #8a93a6);
   font-size: 13px;
   margin-bottom: 2px;
 }
 .stat-card :deep(.el-statistic__content) {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
+  color: var(--app-text, #1f2430);
 }
-.stat-card.new :deep(.el-statistic__content) { color: #4f46e5; }
 .stat-card :deep(.el-statistic__content .suffix) {
-  font-size: 16px;
+  font-size: 14px;
+  color: var(--app-text-secondary, #8a93a6);
   font-weight: 600;
   margin-left: 2px;
 }
-.stat-card.due :deep(.el-statistic__content) { color: #f59e0b; }
-.stat-card.mastered :deep(.el-statistic__content) { color: #22c55e; }
-.progress-panel {
-  border-radius: 16px;
-  border: 1px solid #eef1f6;
+
+/* 签到日历 */
+.record-panel {
+  border-radius: 14px;
+  border: 1px solid var(--app-border, #eef1f6);
 }
-.progress-panel :deep(.el-card__body.progress-body) {
-  padding: 24px;
+.record-panel :deep(.el-card__body.record-body) {
+  padding: 20px 24px;
 }
-.progress-head {
+.record-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 .prog-title {
   font-weight: 700;
   font-size: 16px;
+  color: var(--app-text, #1f2430);
 }
-.prog-tip {
-  color: #9aa3b2;
+
+.weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+}
+.weekday {
+  text-align: center;
+  color: var(--app-text-muted, #9aa3b2);
   font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
-.prog-bar :deep(.el-progress-bar__outer) {
-  background: #eef1f6;
+.day-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
 }
-.progress-foot {
+.day-cell {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  margin-top: 12px;
+  padding: 6px 0;
 }
-.done-text {
-  color: #8a93a6;
+/* 学习日历：圆圈大小 40px，配色换回主题靛蓝/紫渐变 */
+.day-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--app-text, #1f2430);
+  background: var(--app-bg, #f5f7fa);
+  transition: all 0.2s;
+}
+.day-cell.active .day-circle {
+  background: linear-gradient(135deg, var(--app-primary, #6366f1), var(--app-accent, #8b5cf6));
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+.day-cell.today .day-circle {
+  border: 2px solid var(--app-primary, #4f46e5);
+  color: var(--app-primary, #4f46e5);
+  font-weight: 800;
+}
+.day-cell.active.today .day-circle {
+  border: none;
+}
+.day-round {
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--app-primary, #6366f1);
+  font-weight: 600;
+}
+.week-summary {
+  text-align: center;
+  color: var(--app-text-secondary, #6b7280);
   font-size: 13px;
+  padding-top: 10px;
+  margin-top: 8px;
+  border-top: 1px dashed var(--app-border, #eef1f6);
 }
-.done-text b {
-  color: #4f46e5;
-}
+
 @media (max-width: 720px) {
   .hero { flex-direction: column; align-items: flex-start; }
   .stat-grid { grid-template-columns: 1fr; }
+  .day-circle { width: 34px; height: 34px; font-size: 13px; }
 }
 </style>

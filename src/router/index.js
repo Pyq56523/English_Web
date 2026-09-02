@@ -26,7 +26,6 @@ const routes = [
       { path: 'books', name: 'WordBooks', component: () => import('@/views/WordBooks.vue') },
       { path: 'learning', name: 'Learning', component: () => import('@/views/Learning.vue') },
       { path: 'settings', name: 'Settings', component: () => import('@/views/Settings.vue') },
-      { path: 'stats', name: 'Statistics', component: () => import('@/views/Statistics.vue') },
       { path: 'profile', name: 'Profile', component: () => import('@/views/Profile.vue') }
     ]
   }

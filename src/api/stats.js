@@ -1,7 +1,7 @@
 import request from './request'
 
-export function getDashboardStats() {
-  return request.get('/stats/dashboard')
+export function getDashboardStats(params) {
+  return request.get('/stats/dashboard', { params })
 }
 
 export function getHeatmap() {

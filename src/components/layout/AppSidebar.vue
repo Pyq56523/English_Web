@@ -20,10 +20,6 @@
         <el-icon><Reading /></el-icon>
         <span>开始学习</span>
       </el-menu-item>
-      <el-menu-item index="/stats">
-        <el-icon><DataAnalysis /></el-icon>
-        <span>学习统计</span>
-      </el-menu-item>
       <el-menu-item index="/settings">
         <el-icon><Setting /></el-icon>
         <span>学习设置</span>
@@ -37,7 +33,6 @@ import {
   HomeFilled,
   Notebook,
   Reading,
-  DataAnalysis,
   Setting
 } from '@element-plus/icons-vue'
 </script>

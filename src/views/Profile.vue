@@ -1,8 +1,6 @@
 <template>
   <div class="page-container profile">
-    <div class="page-head">
-      <h2 class="title">个人中心</h2>
-    </div>
+    <PageHeader title="个人中心" />
 
     <el-card shadow="never" class="info-card">
       <!-- ========== 展示模式 ========== -->
@@ -286,16 +284,6 @@ async function submitPassword() {
 .profile {
   max-width: 760px;
   margin: 0 auto;
-}
-
-.page-head {
-  margin-bottom: 22px;
-}
-.title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--app-text, #1f2430);
 }
 
 .info-card {

@@ -1,9 +1,8 @@
 <template>
   <div class="page-container learning">
-    <div class="head">
-      <h2 class="title">今日学习</h2>
+    <PageHeader title="今日学习">
       <WordProgress :total="learning.queue.length" :done="learning.queueIndex" />
-    </div>
+    </PageHeader>
 
     <div class="mode-switch">
       <el-segmented
@@ -41,7 +40,7 @@
 
       <div v-else class="done empty-wrap">
         <el-empty :description="emptyTip">
-          <el-button type="primary" round size="large" @click="$router.push('/')">
+          <el-button type="primary" round size="large" @click="toHome">
             返回首页
           </el-button>
         </el-empty>
@@ -62,8 +61,10 @@ import ReviewRating from '@/components/word/ReviewRating.vue'
 import WordProgress from '@/components/word/WordProgress.vue'
 import SpellingPractice from '@/components/word/SpellingPractice.vue'
 import { useLearningStore } from '@/stores/learning'
+import { useNavigate } from '@/router'
 
 const learning = useLearningStore()
+const { toHome } = useNavigate()
 const flipped = ref(false)
 const mode = ref('card') // card | spell
 
@@ -112,15 +113,6 @@ onMounted(async () => {
 .learning {
   max-width: 720px;
   margin: 0 auto;
-}
-.head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-.title {
-  margin: 0;
 }
 .mode-switch {
   display: flex;

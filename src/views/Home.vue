@@ -9,7 +9,7 @@
         </h1>
         <p class="sub">坚持每天学习，让记忆更持久 🌱</p>
         <div class="cta">
-          <el-button type="primary" size="large" round @click="$router.push('/learning')">
+          <el-button type="primary" size="large" round @click="toLearning">
             🚀 开始今日学习
           </el-button>
         </div>
@@ -21,46 +21,32 @@
     </section>
 
     <!-- 当前单词书 -->
-    <el-card class="book-card" body-class="book-body" v-if="wordBook.current">
-      <div class="book-icon">📚</div>
-      <div class="book-info">
-        <div class="book-name">{{ wordBook.current.name }}</div>
-        <div class="book-meta">
-          <el-tag size="small" effect="light">{{ wordBook.current.category }}</el-tag>
-          <span class="book-count">{{ wordBook.current.word_count }} 词</span>
-        </div>
-      </div>
-      <div class="book-actions">
-        <el-button type="primary" round size="small" @click="$router.push('/books')">更换词书</el-button>
-      </div>
-    </el-card>
-    <el-card class="book-card book-card-empty" body-class="book-body" v-else>
+    <CurrentBookCard
+      v-if="wordBook.current"
+      :name="wordBook.current.name"
+      :category="wordBook.current.category"
+      :count="wordBook.current.word_count"
+      action-text="更换词书"
+      @action="toBooks"
+    />
+    <el-card v-else class="book-card book-card-empty" body-class="book-body">
       <div class="book-icon">📚</div>
       <div class="book-info">
         <div class="book-name">还未选择单词书</div>
         <div class="book-meta"><span class="book-count">选择一个词书开始学习吧</span></div>
       </div>
       <div class="book-actions">
-        <el-button type="primary" round size="small" @click="$router.push('/books')">去选择</el-button>
+        <el-button type="primary" round size="small" @click="toBooks">去选择</el-button>
       </div>
     </el-card>
 
     <!-- 学习概览 -->
     <section class="stat-grid">
-      <el-card shadow="hover" class="stat-card new" body-class="stat-body">
-        <div class="stat-icon">📈</div>
-        <el-statistic title="已学 / 所选词书总词数" :value="totalStats.learned">
-          <template #suffix><span class="suffix">/ {{ totalStats.total }}</span></template>
-        </el-statistic>
-      </el-card>
-      <el-card shadow="hover" class="stat-card due" body-class="stat-body">
-        <div class="stat-icon">📖</div>
-        <el-statistic title="今日学习" :value="todayStats.reviewed" />
-      </el-card>
-      <el-card shadow="hover" class="stat-card days" body-class="stat-body">
-        <div class="stat-icon">🗓️</div>
-        <el-statistic title="累计学习天数" :value="totalStats.daysTotal" />
-      </el-card>
+      <StatCard icon="📈" title="已学 / 所选词书总词数" :value="totalStats.learned">
+        <template #suffix> / {{ totalStats.total }}</template>
+      </StatCard>
+      <StatCard icon="📖" title="今日学习" :value="todayStats.reviewed" />
+      <StatCard icon="🗓️" title="累计学习天数" :value="totalStats.daysTotal" />
     </section>
 
     <!-- 签到日历（每周 7 天） -->
@@ -110,8 +96,10 @@ import { useUserStore } from '@/stores/user'
 import { useWordBookStore } from '@/stores/wordBook'
 import { useSettingsStore } from '@/stores/settings'
 import StreakBadge from '@/components/common/StreakBadge.vue'
+import { useNavigate } from '@/router'
 import { getDashboardStats } from '@/api/stats'
 
+const { toBooks, toLearning } = useNavigate()
 const userStore = useUserStore()
 const wordBook = useWordBookStore()
 const settingsStore = useSettingsStore()
@@ -231,9 +219,6 @@ onMounted(async () => {
   color: var(--app-text-secondary, #6b7280);
   font-size: 14px;
 }
-.book-name {
-  color: var(--app-primary, #4f46e5);
-}
 .cta {
   display: flex;
   gap: 10px;
@@ -249,13 +234,14 @@ onMounted(async () => {
   font-size: 13px;
 }
 
-/* 统计卡片 */
+/* 统计卡片栅格布局 */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 20px;
 }
+/* 空态当前词书行 */
 .book-card {
   border-radius: 14px;
   border: 1px solid var(--app-border, #eef1f6);
@@ -275,7 +261,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: var(--app-primary-bg, #eef0ff);
+  background: var(--app-bg, #f5f7fa);
   flex-shrink: 0;
 }
 .book-info {
@@ -297,50 +283,8 @@ onMounted(async () => {
   color: var(--app-text-secondary, #8a93a6);
   font-size: 13px;
 }
-.book-card-empty .book-icon {
-  background: var(--app-bg, #f5f7fa);
-}
 .book-actions {
   flex-shrink: 0;
-}
-.stat-card {
-  border-radius: 14px;
-  border: 1px solid var(--app-border, #eef1f6);
-}
-.stat-card :deep(.el-card__body.stat-body) {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 18px 20px;
-}
-.stat-icon {
-  font-size: 26px;
-  width: 46px;
-  height: 46px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  flex-shrink: 0;
-}
-.stat-card.new .stat-icon { background: var(--app-primary-bg, #eef0ff); }
-.stat-card.due .stat-icon { background: var(--app-primary-soft, #f3e8ff); }
-.stat-card.days .stat-icon { background: var(--app-primary-bg2, #e0f2fe); }
-.stat-card :deep(.el-statistic__head) {
-  color: var(--app-text-secondary, #8a93a6);
-  font-size: 13px;
-  margin-bottom: 2px;
-}
-.stat-card :deep(.el-statistic__content) {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--app-text, #1f2430);
-}
-.stat-card :deep(.el-statistic__content .suffix) {
-  font-size: 14px;
-  color: var(--app-text-secondary, #8a93a6);
-  font-weight: 600;
-  margin-left: 2px;
 }
 
 /* 签到日历 */

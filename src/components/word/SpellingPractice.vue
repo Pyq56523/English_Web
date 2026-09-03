@@ -60,6 +60,9 @@
       <div class="actions">
         <el-button round @click="speakWord">🔊 发音</el-button>
         <el-button round @click="revealHint">💡 提示首字母</el-button>
+        <el-button round type="warning" plain :icon="showAnswer ? '🗏' : undefined" @click="toggleAnswer">
+          {{ showAnswer ? '隐藏单词' : '👁 显示单词' }}
+        </el-button>
       </div>
 
       <input
@@ -95,6 +98,7 @@ const wrong = ref(0)
 const finished = ref(false)
 const shake = ref(false)
 const reveal = ref(false) // 是否展示当前待输入字母
+const showAnswer = ref(false) // 是否展示完整单词（看答案）
 const inputRef = ref(null)
 
 const card = computed(() => props.queue[index.value] || null)
@@ -109,6 +113,7 @@ function resetRound() {
   correct.value = 0
   wrong.value = 0
   reveal.value = false
+  showAnswer.value = false
   finished.value = false
 }
 
@@ -133,6 +138,12 @@ function revealHint() {
   }
 }
 
+function toggleAnswer() {
+  if (!card.value || finished.value) return
+  showAnswer.value = !showAnswer.value
+  if (showAnswer.value) speakWord()
+}
+
 function triggerShake() {
   shake.value = true
   clearTimeout(triggerShake._t)
@@ -145,6 +156,9 @@ function handleLetter(raw) {
   const expected = card.value?.word[pendingIndex.value]?.toLowerCase()
   const typed = (raw || '').toLowerCase()
   if (!expected) return
+
+  // 开始拼写时收回看答案状态
+  if (showAnswer.value && pendingIndex.value === 0) showAnswer.value = false
 
   if (typed === expected) {
     reveal.value = false
@@ -169,6 +183,7 @@ function advance() {
   index.value += 1
   pendingIndex.value = 0
   reveal.value = false
+  showAnswer.value = false
   if (index.value >= props.queue.length) {
     finished.value = true
   } else {
@@ -214,6 +229,7 @@ function focusInput() {
 }
 
 function charClass(i) {
+  if (showAnswer.value) return 'answer'
   return {
     ok: i < pendingIndex.value,
     cur: i === pendingIndex.value && !reveal.value,
@@ -222,6 +238,7 @@ function charClass(i) {
 }
 
 function charText(i) {
+  if (showAnswer.value) return letters.value[i] // 看答案：展示完整单词
   if (i < pendingIndex.value) return letters.value[i] // 已正确 -> 绿色
   if (i === pendingIndex.value && reveal.value) return letters.value[i] // 提示展示
   return '' // 占位
@@ -347,6 +364,12 @@ watch(
   color: var(--app-warn-strong, #f59e0b);
   border-bottom-color: var(--app-warn-strong, #f59e0b);
   background: var(--app-warn-bg, #fff8e8);
+}
+/* 看答案：完整展示单词 */
+.char.answer {
+  color: var(--app-cursor, #4f46e5);
+  border-bottom-color: var(--app-accent, #6366f1);
+  background: var(--app-cur-bg, #eef0ff);
 }
 .shake .char {
   animation: shake 0.3s;

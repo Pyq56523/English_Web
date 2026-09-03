@@ -14,6 +14,15 @@
           <el-input v-model="form.password" size="large" type="password" placeholder="密码（至少 6 位）"
             show-password :prefix-icon="Lock" />
         </el-form-item>
+        <el-form-item prop="captcha">
+          <div class="captcha-row">
+            <el-input v-model="form.captcha_code" size="large" placeholder="图形验证码"
+              class="captcha-input" :prefix-icon="Key" />
+            <img v-if="captchaImg" :src="captchaImg" class="captcha-img" alt="验证码"
+              title="点击刷新" @click="loadCaptcha" />
+            <el-icon v-else class="captcha-loading"><Refresh @click="loadCaptcha" /></el-icon>
+          </div>
+        </el-form-item>
         <el-button type="primary" size="large" class="full" round :loading="loading" @click="onSubmit">
           注册
         </el-button>
@@ -27,16 +36,18 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Message } from '@element-plus/icons-vue'
+import { User, Lock, Message, Key } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useNavigate } from '@/router'
+import { getCaptcha } from '@/api/captcha'
 
 const { toLogin } = useNavigate()
 const userStore = useUserStore()
 const formRef = ref()
-const form = reactive({ username: '', email: '', password: '' })
+const form = reactive({ username: '', email: '', password: '', captcha_id: '', captcha_code: '' })
+const captchaImg = ref('')
 const loading = ref(false)
 
 const rules = {
@@ -54,9 +65,19 @@ const rules = {
   ]
 }
 
+async function loadCaptcha() {
+  try {
+    const data = await getCaptcha()
+    form.captcha_id = data.captcha_id
+    captchaImg.value = data.image
+  } catch (e) {
+    ElMessage.error('图形验证码加载失败')
+  }
+}
+
 async function onSubmit() {
   formRef.value?.validate(() => {})
-  if (!form.username || !form.email || !form.password) {
+  if (!form.username || !form.email || !form.password || !form.captcha_code) {
     ElMessage.warning('请填写完整信息')
     return
   }
@@ -65,16 +86,50 @@ async function onSubmit() {
     await userStore.register(form)
     ElMessage.success('注册成功，请登录')
     toLogin()
+  } catch (e) {
+    // 失败后刷新验证码
+    loadCaptcha()
   } finally {
     loading.value = false
   }
 }
+
+onMounted(loadCaptcha)
 </script>
 
 <style scoped>
 .form :deep(.el-input__wrapper) {
   border-radius: 12px;
   padding: 4px 14px;
+}
+.captcha-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.captcha-input {
+  flex: 1;
+}
+.captcha-img {
+  width: 120px;
+  height: 42px;
+  border-radius: 8px;
+  border: 1px solid var(--app-border, #eef1f6);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.captcha-loading {
+  width: 120px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
+  cursor: pointer;
+  border: 1px dashed #d0d7e0;
+  border-radius: 8px;
+  font-size: 20px;
+  flex-shrink: 0;
 }
 .full {
   width: 100%;

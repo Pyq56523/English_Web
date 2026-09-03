@@ -86,6 +86,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import WordProgress from '@/components/word/WordProgress.vue'
+import { initTTS, speak } from '@/utils/tts'
 
 const props = defineProps({
   queue: { type: Array, default: () => [] }
@@ -119,15 +120,7 @@ function resetRound() {
 
 function speakWord() {
   if (!card.value) return
-  if (!('speechSynthesis' in window)) return // 浏览器不支持则静默降级
-  try {
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(card.value.word)
-    u.lang = 'en-US'
-    window.speechSynthesis.speak(u)
-  } catch (e) {
-    /* 忽略发音失败 */
-  }
+  speak(card.value.word)
 }
 
 function revealHint() {
@@ -245,6 +238,7 @@ function charText(i) {
 }
 
 onMounted(() => {
+  initTTS() // 尽早预加载语音引擎
   focusInput()
   speakWord() // 首个单词自动朗读一遍英语
 })

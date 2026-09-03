@@ -62,6 +62,7 @@ import WordProgress from '@/components/word/WordProgress.vue'
 import SpellingPractice from '@/components/word/SpellingPractice.vue'
 import { useLearningStore } from '@/stores/learning'
 import { useNavigate } from '@/router'
+import { initTTS, speak } from '@/utils/tts'
 
 const learning = useLearningStore()
 const { toHome } = useNavigate()
@@ -78,16 +79,7 @@ const chipText = computed(() => (isNew.value ? '🌟 新词' : '🔁 复习'))
 const chipType = computed(() => (isNew.value ? 'warning' : 'primary'))
 
 function speakWord() {
-  const word = learning.current?.word
-  if (!word || !('speechSynthesis' in window)) return
-  try {
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(word)
-    u.lang = 'en-US'
-    window.speechSynthesis.speak(u)
-  } catch (e) {
-    /* 忽略发音失败 */
-  }
+  speak(learning.current?.word)
 }
 
 async function onRate(quality) {
@@ -105,6 +97,7 @@ watch(
 )
 
 onMounted(async () => {
+  initTTS() // 预加载语音引擎，降低首次朗读延迟
   if (!learning.loaded) await learning.fetchTodayCards()
 })
 </script>

@@ -7,6 +7,7 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import App from './App.vue'
 import router from './router'
 import { useSettingsStore } from './stores/settings'
+import { initTTS } from './utils/tts'
 import PageHeader from './components/common/PageHeader.vue'
 import StatCard from './components/common/StatCard.vue'
 import SettingItem from './components/common/SettingItem.vue'
@@ -31,6 +32,9 @@ app.use(router)
 app.use(ElementPlus, { locale: zhCn })
 Object.entries(GLOBAL_COMPONENTS).forEach(([name, comp]) => app.component(name, comp))
 app.mount('#app')
+
+// 应用加载完成即预热语音引擎，进学习页时发音无需等待
+initTTS()
 
 // 挂载后应用持久化的主题，保证刷新后深色/白天模式立即生效
 useSettingsStore().applyTheme()

@@ -14,6 +14,7 @@ import SettingItem from './components/common/SettingItem.vue'
 import BookCard from './components/common/BookCard.vue'
 import CurrentBookCard from './components/common/CurrentBookCard.vue'
 import AuthCard from './components/common/AuthCard.vue'
+import ForgotPassword from './views/ForgotPassword.vue'
 import './assets/styles/main.scss'
 
 // 全局注册通用 UI 组件：在组件标签中直接可用，无需每个页面 import
@@ -23,7 +24,8 @@ const GLOBAL_COMPONENTS = {
   SettingItem,
   BookCard,
   CurrentBookCard,
-  AuthCard
+  AuthCard,
+  ForgotPassword
 }
 
 const app = createApp(App)

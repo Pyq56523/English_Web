@@ -16,8 +16,11 @@
       </el-form>
     </template>
     <template #footer>
-      还没有账号？
-      <router-link to="/register">立即注册</router-link>
+      <span class="foot-links">
+        <router-link to="/forgot">找回密码</router-link>
+        <span class="divider">·</span>
+        <router-link to="/register">立即注册</router-link>
+      </span>
     </template>
   </AuthCard>
 </template>
@@ -57,6 +60,14 @@ async function onSubmit() {
 </script>
 
 <style scoped>
+.foot-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.foot-links .divider {
+  color: var(--app-text-muted, #a7b0c0);
+}
 .form :deep(.el-input__wrapper) {
   border-radius: 12px;
   padding: 4px 14px;

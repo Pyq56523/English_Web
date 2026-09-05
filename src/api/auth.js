@@ -17,17 +17,21 @@ export function meApi() {
 }
 
 export function updateMeApi(payload) {
-  return request.put('/auth/update-me', payload)
+  return request.put('/auth/update_me', payload)
 }
 
 export function changePasswordApi(payload) {
-  return request.post('/auth/change-password', payload)
+  return request.post('/auth/change_password', payload)
+}
+
+export function resetPasswordApi(payload) {
+  return request.post('/auth/reset_password', payload)
 }
 
 export function uploadAvatarApi(file) {
   const formData = new FormData()
   formData.append('file', file)
-  return request.post('/auth/upload-avatar', formData, {
+  return request.post('/auth/upload_avatar', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }

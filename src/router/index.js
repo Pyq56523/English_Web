@@ -13,7 +13,8 @@ export const APP_ROUTES = {
   settings: { path: '/settings', name: 'Settings' },
   profile: { path: '/profile', name: 'Profile' },
   login: { path: '/login', name: 'Login' },
-  register: { path: '/register', name: 'Register' }
+  register: { path: '/register', name: 'Register' },
+  forgot: { path: '/forgot', name: 'ForgotPassword' }
 }
 
 /** 跳转目标白名单，便于类型提示与集中管理 */
@@ -59,6 +60,12 @@ const routes = [
     path: '/register',
     name: 'Register',
     component: () => import('@/views/Register.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/forgot',
+    name: 'ForgotPassword',
+    component: () => import('@/views/ForgotPassword.vue'),
     meta: { public: true }
   },
   {
